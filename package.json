@@ -2,7 +2,10 @@
   "name": "agent-dna-system",
   "version": "0.1.0",
   "description": "Create and evolve AI agents through genomics - by Team 7",
-  "main": "src/genome.js",
+  "main": "src/index.js",
+  "bin": {
+    "agent-dna": "./tools/cli.js"
+  },
   "scripts": {
     "test": "jest",
     "lint": "eslint src/",
