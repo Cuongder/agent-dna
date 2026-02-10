@@ -1,0 +1,24 @@
+{
+  "name": "agent-dna-system",
+  "version": "0.1.0",
+  "description": "Evolution engine for AI agents - Genetic algorithm-based self-improvement system",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests/*.test.js",
+    "cli": "node tools/cli.js"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "genetic-algorithm",
+    "evolution",
+    "dna",
+    "genome",
+    "openclaw"
+  ],
+  "author": "Team 7 (Kakashi & Shika)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
