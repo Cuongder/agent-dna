@@ -11,6 +11,8 @@ const { Genome, Gene } = require('./genome');
 const genes = require('./genes');
 const presets = require('./presets');
 const evolution = require('./evolution');
+const epigenetics = require('./epigenetics');
+const contexts = require('./epigenetics/contexts');
 
 module.exports = {
   // Core classes
@@ -25,6 +27,10 @@ module.exports = {
   
   // Evolution engine
   evolution,
+  
+  // Epigenetics
+  epigenetics,
+  contexts,
   
   // Quick factory methods
   createAgent: (type, agentId, generation) => {
