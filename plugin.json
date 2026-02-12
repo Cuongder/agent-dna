@@ -1,0 +1,41 @@
+{
+  "name": "agent-dna",
+  "description": "Evolution engine for OpenClaw agents - Body meets Soul",
+  "version": "1.0.0",
+  "author": "Team 7 (Kakashi, Shika)",
+  "main": "index.js",
+  "hooks": [
+    "session:start",
+    "tool:before", 
+    "tool:after",
+    "session:end"
+  ],
+  "config": {
+    "agentId": {
+      "type": "string",
+      "default": "default-agent",
+      "description": "Unique identifier for this agent's DNA"
+    },
+    "autoEvolve": {
+      "type": "boolean", 
+      "default": true,
+      "description": "Automatically evolve when fitness is low"
+    },
+    "evolutionThreshold": {
+      "type": "number",
+      "default": 0.6,
+      "min": 0,
+      "max": 1,
+      "description": "Fitness threshold to trigger evolution"
+    },
+    "dnaDir": {
+      "type": "string",
+      "default": "~/.openclaw/dna",
+      "description": "Directory to store DNA files"
+    }
+  },
+  "events": {
+    "emit": ["dna:log", "dna:evolved", "dna:fitnessChanged"],
+    "listen": []
+  }
+}

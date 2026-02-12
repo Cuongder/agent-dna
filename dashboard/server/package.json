@@ -1,7 +1,7 @@
 {
-  "name": "agent-dna-dashboard-server",
-  "version": "0.1.0",
-  "description": "Dashboard API for Agent DNA System",
+  "name": "agent-dna-server",
+  "version": "1.0.0",
+  "description": "Agent DNA Production Server with OpenClaw Integration",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -9,8 +9,7 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "body-parser": "^1.20.2"
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

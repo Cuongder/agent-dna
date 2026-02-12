@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent DNA - Production</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0ff;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(90deg, #1a1a2e, #16213e);
+            padding: 20px;
+            border-bottom: 2px solid #00d4ff;
+        }
+        .header h1 {
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
+        }
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            padding: 10px 20px;
+            background: #0f0f1a;
+            font-size: 0.9rem;
+        }
+        .status-item { display: flex; align-items: center; gap: 8px; }
+        .status-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #ff4444;
+        }
+        .status-dot.connected { background: #00ff88; animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        .grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+        .sidebar { background: #12121f; border-radius: 12px; padding: 20px; }
+        .main { background: #12121f; border-radius: 12px; padding: 20px; }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #00d4ff; color: #0a0a0f; }
+        .btn-success { background: #00ff88; color: #0a0a0f; }
+        .btn-warning { background: #ffaa00; color: #0a0a0f; }
+        .btn-danger { background: #ff4444; color: white; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,212,255,0.3); }
+        
+        .agent-list { margin-top: 20px; }
+        .agent-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #1a1a2e;
+            border-radius: 8px;
+            border-left: 4px solid #00d4ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .agent-item:hover { background: #252540; }
+        .agent-item.selected { border-left-color: #00ff88; background: #1e1e35; }
+        .agent-name { font-weight: bold; color: #00d4ff; }
+        .agent-meta { font-size: 0.85rem; color: #888; margin-top: 5px; }
+        .fitness-bar {
+            height: 6px;
+            background: #2a2a4a;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .fitness-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00d4ff);
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+        
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .panel h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        
+        .form-group { margin: 15px 0; }
+        .form-group label { display: block; margin-bottom: 5px; color: #888; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            background: #0a0a0f;
+            color: #e0e0ff;
+            font-size: 1rem;
+        }
+        .form-group textarea { min-height: 150px; resize: vertical; }
+        
+        .output-box {
+            background: #0a0a0f;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .metric-value { font-size: 1.8rem; font-weight: bold; color: #00d4ff; }
+        .metric-label { font-size: 0.85rem; color: #888; margin-top: 5px; }
+        
+        .log-panel {
+            background: #0a0a0f;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .log-entry { margin: 5px 0; padding: 5px; border-radius: 4px; }
+        .log-info { color: #00d4ff; }
+        .log-success { color: #00ff88; background: rgba(0,255,136,0.1); }
+        .log-error { color: #ff4444; background: rgba(255,68,68,0.1); }
+        .log-warning { color: #ffaa00; background: rgba(255,170,0,0.1); }
+        
+        .team-select {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .team-member {
+            padding: 10px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .team-member:hover { border-color: #00d4ff; }
+        .team-member.selected { border-color: #00ff88; background: #1e1e35; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .empty-state h3 { color: #888; margin-bottom: 10px; }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #2a2a4a;
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-success { background: #00ff88; color: #0a0a0f; }
+        .badge-warning { background: #ffaa00; color: #0a0a0f; }
+        .badge-danger { background: #ff4444; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧬 Agent DNA - Production</h1>
+    </div>
+    
+    <div class="status-bar">
+        <div class="status-item">
+            <span class="status-dot" id="serverStatus"></span>
+            <span>Server: <span id="serverStatusText">Checking...</span></span>
+        </div>
+        <div class="status-item">
+            <span class="status-dot" id="openclawStatus"></span>
+            <span>OpenClaw: <span id="openclawStatusText">Checking...</span></span>
+        </div>
+        <div class="status-item">
+            <span>Agents: <strong id="totalAgents">0</strong> | 
+            Tasks: <strong id="totalTasks">0</strong> | 
+            Avg Fitness: <strong id="avgFitness">0%</strong></span>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="grid">
+            <div class="sidebar">
+                <button class="btn btn-primary" onclick="showPanel('create')">➕ Create Agent</button>
+                <button class="btn btn-success" onclick="showPanel('run')">⚡ Run Task</button>
+                <button class="btn btn-warning" onclick="showPanel('delegate')">👑 Leader Delegate</button>
+                <button class="btn" onclick="showPanel('logs')">📋 View Logs</button>
+                
+                <div class="agent-list" id="agentList">
+                    <div class="empty-state">
+                        <p>No agents yet</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="main">
+                <!-- Create Agent Panel -->
+                <div class="panel" id="panel-create">
+                    <h2>➕ Create New Agent</h2>
+                    <div class="form-group">
+                        <label>Agent ID</label>
+                        <input type="text" id="newAgentId" placeholder="e.g., my-agent-1">
+                    </div>
+                    <div class="form-group">
+                        <label>Agent Type</label>
+                        <select id="newAgentType">
+                            <option value="adaptive">Adaptive (Balanced)</option>
+                            <option value="leader">Leader (High analytical + leadership)</option>
+                            <option value="creative">Creative (High creativity)</option>
+                            <option value="analytical">Analytical (High caution + analytical)</option>
+                            <option value="fast">Fast (High speed)</option>
+                            <option value="cautious">Cautious (High caution)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="createAgent()">Create Agent</button>
+                </div>
+                
+                <!-- Run Task Panel -->
+                <div class="panel active" id="panel-run">
+                    <h2>⚡ Run Task with OpenClaw</h2>
+                    
+                    <div id="run-no-agent" class="empty-state">
+                        <h3>Select an agent from the sidebar</h3>
+                        <p>Choose an agent to execute a task through OpenClaw</p>
+                    </div>
+                    
+                    <div id="run-form" style="display: none;">
+                        <div class="form-group">
+                            <label>Selected Agent</label>
+                            <input type="text" id="runAgentId" readonly>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Task Description</label>
+                            <textarea id="taskDesc" placeholder="Describe what you want the agent to do...
+
+Example: Write a Node.js function to validate email addresses with regex"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Task Type</label>
+                            <select id="taskType">
+                                <option value="general">General</option>
+                                <option value="coding">Coding</option>
+                                <option value="analysis">Analysis</option>
+                                <option value="writing">Writing</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn btn-success" onclick="runTask()" id="runBtn">
+                            <span id="runBtnText">🚀 Execute with OpenClaw</span>
+                        </button>
+                        
+                        <div id="runOutput" style="display: none;">
+                            <div class="metrics">
+                                <div class="metric-card">
+                                    <div class="metric-value" id="metricQuality">-</div>
+                                    <div class="metric-label">Quality Score</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-value" id="metricDuration">-</div>
+                                    <div class="metric-label">Duration</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-value" id="metricTokens">-</div>
+                                    <div class="metric-label">Tokens</div>
+                                </div>
+                            </div>
+                            
+                            <h3 style="margin-top: 20px; color: #00d4ff;">Output:</h3>
+                            <div class="output-box" id="taskOutput"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Leader Delegate Panel -->
+                <div class="panel" id="panel-delegate">
+                    <h2>👑 Leader Task Delegation</h2>
+                    
+                    <div class="form-group">
+                        <label>Select Leader</label>
+                        <select id="delegateLeader"></select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Project/Task Description</label>
+                        <textarea id="delegateTask" placeholder="Describe a complex project that needs team coordination...
+
+Example: Build a web application with user authentication, dashboard, and API endpoints"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Select Team Members</label>
+                        <div class="team-select" id="teamSelect"></div>
+                    </div>
+                    
+                    <button class="btn btn-warning" onclick="delegateTask()" id="delegateBtn">
+                        <span id="delegateBtnText">🚀 Delegate & Execute</span>
+                    </button>
+                    
+                    <div id="delegateOutput" style="display: none;">
+                        <div class="metrics">
+                            <div class="metric-card">
+                                <div class="metric-value" id="delegateSuccessRate">-</div>
+                                <div class="metric-label">Success Rate</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="delegateQuality">-</div>
+                                <div class="metric-label">Avg Quality</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value" id="delegateDuration">-</div>
+                                <div class="metric-label">Total Duration</div>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-top: 20px; color: #00d4ff;">Team Results:</h3>
+                        <div id="delegateResults"></div>
+                    </div>
+                </div>
+                
+                <!-- Logs Panel -->
+                <div class="panel" id="panel-logs">
+                    <h2>📋 Activity Logs</h2>
+                    <div class="log-panel" id="logPanel">
+                        <div class="log-entry log-info">System initialized...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let agents = [];
+        let selectedAgent = null;
+
+        async function checkStatus() {
+            try {
+                const res = await fetch(`${API_URL}/health`);
+                const data = await res.json();
+                
+                // Server status
+                const serverDot = document.getElementById('serverStatus');
+                const serverText = document.getElementById('serverStatusText');
+                serverDot.classList.add('connected');
+                serverText.textContent = 'Connected';
+                
+                // OpenClaw status
+                const ocDot = document.getElementById('openclawStatus');
+                const ocText = document.getElementById('openclawStatusText');
+                if (data.openclaw === 'connected') {
+                    ocDot.classList.add('connected');
+                    ocText.textContent = 'Connected';
+                } else {
+                    ocText.textContent = 'Disconnected (CLI fallback)';
+                }
+            } catch (err) {
+                log('Failed to connect to server', 'error');
+            }
+        }
+
+        async function fetchAgents() {
+            try {
+                const res = await fetch(`${API_URL}/agents`);
+                const data = await res.json();
+                agents = data.agents || [];
+                renderAgents();
+                updateStats();
+                updateSelects();
+            } catch (err) {
+                log('Failed to fetch agents: ' + err.message, 'error');
+            }
+        }
+
+        async function updateStats() {
+            try {
+                const res = await fetch(`${API_URL}/stats`);
+                const data = await res.json();
+                document.getElementById('totalAgents').textContent = data.totalAgents;
+                document.getElementById('totalTasks').textContent = data.totalTasks;
+                document.getElementById('avgFitness').textContent = (data.avgFitness * 100).toFixed(1) + '%';
+            } catch (err) {
+                console.error('Failed to fetch stats:', err);
+            }
+        }
+
+        function renderAgents() {
+            const list = document.getElementById('agentList');
+            if (agents.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <p>No agents yet</p>
+                        <p style="font-size: 0.85rem;">Click "Create Agent" to start</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = agents.map(agent => `
+                <div class="agent-item ${selectedAgent === agent.agentId ? 'selected' : ''}" 
+                     onclick="selectAgent('${agent.agentId}')"
+                     title="Click to select for task execution">
+                    <div class="agent-name">${agent.agentId}</div>
+                    <div class="agent-meta">
+                        Gen ${agent.generation} | ${agent.type} | ${agent.tasksCompleted} tasks
+                    </div>
+                    <div class="fitness-bar">
+                        <div class="fitness-fill" style="width: ${agent.fitness * 100}%"></div>
+                    </div>
+                    <div class="agent-meta" style="margin-top: 5px;">
+                        Fitness: ${(agent.fitness * 100).toFixed(1)}% | 
+                        Success: ${agent.tasksSucceeded}/${agent.tasksCompleted}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateSelects() {
+            // Update leader select
+            const leaderSelect = document.getElementById('delegateLeader');
+            leaderSelect.innerHTML = agents.map(a => `<option value="${a.agentId}">${a.agentId} (${a.type})</option>`).join('');
+
+            // Update team select
+            const teamSelect = document.getElementById('teamSelect');
+            teamSelect.innerHTML = agents.map(a => `
+                <div class="team-member" data-id="${a.agentId}" onclick="toggleTeamMember(this)">
+                    <strong>${a.agentId}</strong><br>
+                    <small>${a.type} | ${(a.fitness * 100).toFixed(0)}%</small>
+                </div>
+            `).join('');
+        }
+
+        function selectAgent(agentId) {
+            selectedAgent = agentId;
+            renderAgents();
+            
+            // Show run form
+            document.getElementById('run-no-agent').style.display = 'none';
+            document.getElementById('run-form').style.display = 'block';
+            document.getElementById('runAgentId').value = agentId;
+            
+            showPanel('run');
+            log(`Selected agent: ${agentId}`, 'info');
+        }
+
+        function toggleTeamMember(el) {
+            el.classList.toggle('selected');
+        }
+
+        function showPanel(name) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`panel-${name}`).classList.add('active');
+        }
+
+        async function createAgent() {
+            const id = document.getElementById('newAgentId').value.trim();
+            const type = document.getElementById('newAgentType').value;
+            
+            if (!id) {
+                alert('Please enter an agent ID');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/agents`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agentId: id, type })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    log(`✅ Created agent: ${id} (${type})`, 'success');
+                    document.getElementById('newAgentId').value = '';
+                    fetchAgents();
+                    showPanel('run');
+                } else {
+                    log('❌ Failed: ' + data.error, 'error');
+                }
+            } catch (err) {
+                log('Error: ' + err.message, 'error');
+            }
+        }
+
+        async function runTask() {
+            if (!selectedAgent) {
+                alert('Please select an agent first');
+                return;
+            }
+
+            const task = document.getElementById('taskDesc').value.trim();
+            const type = document.getElementById('taskType').value;
+            
+            if (!task) {
+                alert('Please enter a task description');
+                return;
+            }
+
+            const btn = document.getElementById('runBtn');
+            const btnText = document.getElementById('runBtnText');
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span> Executing...';
+
+            log(`🚀 Executing task for ${selectedAgent}...`, 'info');
+
+            try {
+                const res = await fetch(`${API_URL}/agents/${selectedAgent}/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task, type })
+                });
+                const data = await res.json();
+                
+                // Show output
+                document.getElementById('runOutput').style.display = 'block';
+                document.getElementById('metricQuality').textContent = (data.quality * 100).toFixed(0) + '%';
+                document.getElementById('metricDuration').textContent = data.duration + 'ms';
+                document.getElementById('metricTokens').textContent = data.tokensUsed || 'N/A';
+                document.getElementById('taskOutput').textContent = data.output || data.error || 'No output';
+                
+                if (data.success) {
+                    log(`✅ Task completed! Quality: ${(data.quality * 100).toFixed(0)}%, New fitness: ${data.newFitness}`, 'success');
+                } else {
+                    log(`❌ Task failed: ${data.error}`, 'error');
+                }
+                
+                fetchAgents();
+            } catch (err) {
+                log('Error: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = '🚀 Execute with OpenClaw';
+            }
+        }
+
+        async function delegateTask() {
+            const leaderId = document.getElementById('delegateLeader').value;
+            const task = document.getElementById('delegateTask').value.trim();
+            
+            const selectedMembers = Array.from(document.querySelectorAll('.team-member.selected'))
+                .map(el => el.dataset.id);
+            
+            if (!task) {
+                alert('Please enter a task description');
+                return;
+            }
+            
+            if (selectedMembers.length === 0) {
+                alert('Please select at least one team member');
+                return;
+            }
+
+            const btn = document.getElementById('delegateBtn');
+            const btnText = document.getElementById('delegateBtnText');
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span> Delegating...';
+
+            log(`👑 Leader ${leaderId} delegating to team: ${selectedMembers.join(', ')}`, 'info');
+
+            try {
+                const res = await fetch(`${API_URL}/leader/${leaderId}/delegate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task, team: selectedMembers })
+                });
+                const data = await res.json();
+                
+                document.getElementById('delegateOutput').style.display = 'block';
+                document.getElementById('delegateSuccessRate').textContent = data.summary?.successRate || '-';
+                document.getElementById('delegateQuality').textContent = data.summary?.avgQuality || '-';
+                document.getElementById('delegateDuration').textContent = data.summary?.totalDuration || '-';
+                
+                // Render team results
+                const resultsDiv = document.getElementById('delegateResults');
+                if (data.teamResults) {
+                    resultsDiv.innerHTML = Object.entries(data.teamResults).map(([id, result]) => `
+                        <div style="background: #1a1a2e; padding: 15px; margin: 10px 0; border-radius: 8px;">
+                            <strong>${id}</strong> 
+                            ${result.success ? '<span class="badge badge-success">✅ Success</span>' : '<span class="badge badge-danger">❌ Failed</span>'}
+                            <br><small>${result.subtask?.description}</small>
+                            ${result.output ? `<pre style="margin-top: 10px; padding: 10px; background: #0a0a0f; border-radius: 4px; overflow-x: auto;">${result.output.substring(0, 300)}${result.output.length > 300 ? '...' : ''}</pre>` : ''}
+                        </div>
+                    `).join('');
+                }
+                
+                log(`✅ Delegation complete! Success rate: ${data.summary?.successRate}, Leader fitness: ${data.summary?.leaderFitness}`, 'success');
+                fetchAgents();
+            } catch (err) {
+                log('Error: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = '🚀 Delegate & Execute';
+            }
+        }
+
+        function log(message, type = 'info') {
+            const panel = document.getElementById('logPanel');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            panel.appendChild(entry);
+            panel.scrollTop = panel.scrollHeight;
+            
+            // Also show in console
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Initialize
+        checkStatus();
+        fetchAgents();
+        setInterval(() => {
+            checkStatus();
+            updateStats();
+        }, 10000);
+    </script>
+</body>
+</html>
