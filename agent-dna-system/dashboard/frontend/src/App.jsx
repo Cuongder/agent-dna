@@ -15,17 +15,26 @@ function App() {
     fetchAgents()
   }, [])
 
+  const API_URL = 'http://localhost:3001/api'
+
   const fetchAgents = async () => {
     try {
-      // Mock data for now - will connect to Kakashi's API
-      const mockAgents = [
-        { id: 'agent-001', name: 'Shika', generation: 5, fitness: 0.85, genes: { creativity: 0.8, coding: 0.9 } },
-        { id: 'agent-002', name: 'Kakashi', generation: 8, fitness: 0.92, genes: { creativity: 0.7, coding: 0.95 } },
-        { id: 'agent-003', name: 'Test-1', generation: 2, fitness: 0.65, genes: { creativity: 0.6, coding: 0.7 } },
-      ]
-      setAgents(mockAgents)
+      const response = await fetch(`${API_URL}/agents`)
+      if (!response.ok) throw new Error('Failed to fetch')
+      const data = await response.json()
+      // Transform API data to match component structure
+      const transformedAgents = (data.agents || []).map(agent => ({
+        id: agent.agentId,
+        name: agent.agentId.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        generation: agent.generation,
+        fitness: agent.fitness,
+        genes: { creativity: 0.5, coding: 0.5 } // Will fetch detailed genes separately
+      }))
+      setAgents(transformedAgents)
     } catch (error) {
       console.error('Failed to fetch agents:', error)
+      // Fallback to empty array if API is not available
+      setAgents([])
     }
   }
 
